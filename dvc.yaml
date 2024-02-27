@@ -1,0 +1,65 @@
+stages:
+
+  load_data:
+    cmd: python load_data.py
+    deps:
+    - data/raw
+    outs:
+    - data/processed:
+        cache: true
+        persist: true
+    - data/processed_files.txt:
+        cache: false
+        persist: true
+    always_changed: true
+
+  prepare_data:
+    cmd: python prepare_data.py
+    deps:
+    - prepare_data.py
+    - data/processed_files.txt
+    outs:
+    - data/features.csv
+
+  train:
+    cmd: python train.py
+    deps:
+    - data/features.csv
+    outs:
+    - mnt/disk1/checkpoints:
+        persist: true
+    - models/model.pkl
+
+  evaluate:
+    cmd: python evaluate_models.py
+    deps:
+    - models/model.pkl
+    metrics:
+    - reports/metrics_report.json
+
+plots:
+- reports/train/plots/metrics:
+    x: step
+- reports/train/plots/metrics/Error.tsv:
+    template: simple
+    x: step
+    y: Error
+    title: 'RF: Errors vs Max Leaf Nodes'
+- dvclive_error_vs_nodes:
+    template: simple
+    x:
+      reports/dvclive/plots/metrics/Error.tsv: Error
+    y:
+      reports/dvclive/plots/metrics/Max_Leaf_Nodes.tsv: Max_Leaf_Nodes
+    title: 'DVCLive: Errors vs Max Leaf Nodes'
+- dvclive/plots/metrics:
+    x: step
+metrics:
+- reports/train/metrics.json
+- dvclive/metrics.json
+params:
+- dvclive/params.yaml
+artifacts:
+  best:
+    path: dvclive/artifacts/epoch=4-step=1000-v1.ckpt
+    type: model

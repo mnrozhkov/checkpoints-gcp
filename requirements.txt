@@ -1,0 +1,7 @@
+dvc>=3.44.0
+dvclive[lightning]>=3.44.0
+joblib
+lightning
+pandas
+scikit-learn
+torchvision>=0.17.1,<1
