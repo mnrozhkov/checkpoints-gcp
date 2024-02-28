@@ -23,10 +23,10 @@ jobs:
           ref: ${{ inputs.parent-sha || '' }}
       - uses: iterative/setup-cml@v2
       
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_CML_RUNNER_KEY }}
+      # - name: Authenticate to Google Cloud
+      #   uses: google-github-actions/auth@v2
+      #   with:
+      #     credentials_json: ${{ secrets.GCP_CML_RUNNER_KEY }}
       
       - name: Create Runner
         env:
@@ -35,13 +35,14 @@ jobs:
           cml runner launch --single \
             --labels=cml \
             --idle-timeout=300 \
-            --token=${{ secrets.PAT_GCP_DEMO }} \
             --cloud=gcp \
-            --cloud-permission-set=custom-compute-service-account@pfc-uesd-dpm-dev.iam.gserviceaccount.com,scopes=storage-rw \
             --cloud-region=us-central1-a \
             --cloud-type=n2d-highcpu-64 \
             --cloud-hdd-size=40 \
             --cloud-spot=false
+          env:
+            CML_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+            GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
 
   runner-job:
     needs: deploy-runner
@@ -69,7 +70,7 @@ jobs:
         run: |
           # cml ci --fetch-depth 0
           dvc exp run --pull --allow-missing 
-          # dvc remote add --local push_remote gs://dvc-cse/checkpoints-gcp/remote
+          dvc remote add --local push_remote gs://dvc-cse/checkpoints-gcp/remote
           dvc exp push origin -r push_remote
 
       - name: Commit-based Sharing
