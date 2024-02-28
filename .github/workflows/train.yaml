@@ -12,10 +12,6 @@ jobs:
   deploy-runner:
     runs-on: ubuntu-latest
     environment: cloud
-
-    env:
-      CML_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-      GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
     
     steps:
       - uses: actions/checkout@v3
@@ -26,7 +22,9 @@ jobs:
       - name: Create Runner
         env:
           REPO_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
         run: |
+          env
           cml runner launch --single \
             --labels=cml \
             --idle-timeout=300 \
