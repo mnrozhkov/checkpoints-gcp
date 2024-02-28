@@ -63,7 +63,7 @@ def train(resume=False):
     # 
     model = LitAutoEncoder(encoder_size=64, lr=0.01)
     checkpoint_callback = ModelCheckpoint(
-        dirpath='mnt/disk1/checkpoints/',
+        dirpath='models/checkpoints/',
         filename='mnist-{epoch:02d}',
         verbose=True,
         save_last=True,
@@ -80,8 +80,8 @@ def train(resume=False):
 
     fs = LocalFileSystem()
     CKPT_PATH=None
-    if resume and fs.exists("mnt/disk1/checkpoints/last.ckpt"):
-        CKPT_PATH="mnt/disk1/checkpoints/last.ckpt"
+    if resume and fs.exists("models/checkpoints/last.ckpt"):
+        CKPT_PATH="models/checkpoints/last.ckpt"
         print("Resuming from checkpoint: ", CKPT_PATH)
 
     with Live(save_dvc_exp=False, dvcyaml=True) as live:
