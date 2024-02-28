@@ -1,5 +1,7 @@
 # Example
 data/MNIST
+.dev
+notebooks
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

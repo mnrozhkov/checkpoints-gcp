@@ -1,0 +1,53 @@
+schema: '2.0'
+stages:
+  load_data:
+    cmd: python src/load_data.py
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: d751713988987e9331980363e24189ce.dir
+      size: 0
+      nfiles: 0
+    outs:
+    - path: data/processed
+      hash: md5
+      md5: d751713988987e9331980363e24189ce.dir
+      size: 0
+      nfiles: 0
+    - path: data/processed_files.txt
+      hash: md5
+      md5: ecc159f0d65a991ae445571f3694ad6f
+      size: 30
+  prepare_data:
+    cmd: python src/prepare_data.py
+    deps:
+    - path: data/processed_files.txt
+      hash: md5
+      md5: ecc159f0d65a991ae445571f3694ad6f
+      size: 30
+    - path: src/prepare_data.py
+      hash: md5
+      md5: 02cb8f8e9376e3171ab4750fb9d9e57e
+      size: 682
+    outs:
+    - path: data/features.csv
+      hash: md5
+      md5: c366429e8080b6378d1ae4de6f97b96b
+      size: 9911
+  train:
+    cmd: python src/train.py
+    deps:
+    - path: data/features.csv
+      hash: md5
+      md5: c366429e8080b6378d1ae4de6f97b96b
+      size: 9911
+    outs:
+    - path: mnt/disk1/checkpoints
+      hash: md5
+      md5: 0e4a17e9c235f627e1871b8066d56a8d.dir
+      size: 7388402
+      nfiles: 6
+    - path: models/model.ckpt
+      hash: md5
+      md5: dce32a65a729be1d52313ef2e578fbf7
+      size: 1231411
