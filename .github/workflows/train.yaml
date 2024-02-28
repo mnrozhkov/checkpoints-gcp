@@ -38,7 +38,7 @@ jobs:
             --cloud=gcp \
             --cloud-region=us-central1-a \
             --cloud-type=n2-standard-64 \
-            --cloud-permission-set=gcs-590@iterative-sandbox.iam.gserviceaccount.com,scopes=storage-rw \
+            --cloud-permission-set=mikhail@iterative-sandbox.iam.gserviceaccount.com,scopes=storage-rw \
             --cloud-hdd-size=40 \
             --cloud-spot=true
           env:
