@@ -24,7 +24,6 @@ jobs:
           REPO_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
         run: |
-          env
           cml runner launch --single \
             --labels=cml \
             --idle-timeout=300 \
@@ -48,7 +47,7 @@ jobs:
         with:
           ref: gcp
           fetch-depth: 0
-          token: ${{ secrets.PAT_GCP_DEMO }}
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - run: pip install -r requirements.txt
 
