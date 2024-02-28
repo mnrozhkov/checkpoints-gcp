@@ -30,6 +30,8 @@ stages:
     - models/model.ckpt:
         persist: true
         cache: false
+    - models/last.ckpt:
+        persist: true
 
 plots:
 - dvclive/plots/metrics:

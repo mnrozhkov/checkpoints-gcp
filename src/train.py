@@ -50,7 +50,7 @@ class LitAutoEncoder(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
         return optimizer
 
-def train(resume=False):
+def train():
 
     print("Training Random Forest model - START")
     
@@ -80,16 +80,20 @@ def train(resume=False):
 
     fs = LocalFileSystem()
     CKPT_PATH=None
-    if resume and fs.exists("models/checkpoints/last.ckpt"):
-        CKPT_PATH="models/checkpoints/last.ckpt"
+    import dvc.api
+
+    params = dvc.api.params_show()
+    is_resume = params.get('train').get('is_resume', False)
+    if is_resume and fs.exists("models/last.ckpt"):
+        CKPT_PATH="models/last.ckpt"
         print("Resuming from checkpoint: ", CKPT_PATH)
 
-    with Live(save_dvc_exp=False, dvcyaml=True) as live:
+    with Live(save_dvc_exp=False, dvcyaml=True, resume=is_resume) as live:
 
         trainer = pl.Trainer(
             limit_train_batches=200,
             limit_val_batches=100,
-            max_epochs=5,
+            max_epochs=6,
             logger=DVCLiveLogger(log_model=False, experiment=live),
             callbacks=[checkpoint_callback]
         )
@@ -101,18 +105,24 @@ def train(resume=False):
         )
 
         # Log additional metrics after training
-        model_path = checkpoint_callback.best_model_path
-        # best_model_dst = "dvclive/artifacts/best_model.ckpt"
-        best_model_dst = "models/model.ckpt"
-        shutil.copy(model_path, best_model_dst)
-        live.log_artifact(best_model_dst, name="best", type="model", copy=False)
+        if checkpoint_callback.best_model_path:
+            print(checkpoint_callback.best_model_path)
+            model_path = checkpoint_callback.best_model_path
+            best_model_dst = "models/model.ckpt"
+            shutil.copy(model_path, best_model_dst)
+            live.log_artifact(best_model_dst, name="best", type="model", copy=False)
+
+        # Copy the last checkpoint to models folder
+        if checkpoint_callback.last_model_path:
+            shutil.copy(checkpoint_callback.last_model_path, "models/last.ckpt")
         
 
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Train your model.')
-    parser.add_argument('--resume', action='store_true', help='Resume training if True, start new training otherwise (default: False)')
+    # parser.add_argument('--resume', action='store_true', help='Resume training if True, start new training otherwise (default: False)')
     args = parser.parse_args()
     
     # Call train function with the value of resume argument
-    train(resume=args.resume)
+    # train(resume=args.resume)
+    train()
