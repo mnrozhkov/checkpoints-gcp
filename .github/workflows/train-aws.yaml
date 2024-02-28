@@ -1,4 +1,4 @@
-name: Train on-spot VM and save checkpoints
+name: Train on AWS
 
 on: workflow_dispatch
 
