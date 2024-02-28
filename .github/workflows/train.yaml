@@ -29,7 +29,7 @@ jobs:
             --idle-timeout=300 \
             --cloud=gcp \
             --cloud-region=us-central1-a \
-            --cloud-type=m \
+            --cloud-type=n2-standard-64 \
             --cloud-hdd-size=40 \
             --cloud-spot=true
 
