@@ -42,13 +42,26 @@ jobs:
       options: --gpus all --ipc host
       
     steps:
+      - run: |
+          sudo tee /etc/apt/sources.list.d/gcsfuse.list <<< "deb http://packages.cloud.google.com/apt gcsfuse-$(lsb_release -cs) main"
+          curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+          sudo apt-get update
+      - run: |
+          sudo apt-get install fuse gcsfuse
+      - run: |
+          export GOOGLE_APPLICATION_CREDENTIALS="$(mktemp)"
+          printenv GOOGLE_APPLICATION_CREDENTIALS_DATA > "$GOOGLE_APPLICATION_CREDENTIALS"
+          sudo -E gcsfuse --implicit-dirs --only-dir checkpoints-gcp/checkpoints dvc-cse .
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
           ref: gcp
           fetch-depth: 0
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-
+          
       - run: pip install -r requirements.txt
 
       - name: Train
