@@ -37,14 +37,7 @@ jobs:
     needs: deploy-runner
     runs-on: [ self-hosted, cml ]
     environment: cloud      
-    steps:
-      - if: success() || failure()
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
-          
+    steps:          
       - run: |
           echo "deb [signed-by=/usr/share/keyrings/cloud.google.asc] https://packages.cloud.google.com/apt gcsfuse-$(lsb_release -c -s) main" |
             sudo tee /etc/apt/sources.list.d/gcsfuse.list
@@ -54,7 +47,7 @@ jobs:
       - run: |
           export GOOGLE_APPLICATION_CREDENTIALS="$(mktemp)"
           printenv GOOGLE_APPLICATION_CREDENTIALS_DATA > "$GOOGLE_APPLICATION_CREDENTIALS"
-          sudo --preserve-env gcsfuse --implicit-dirs --only-dir checkpoints-gcp/checkpoints dvc-cse .
+          sudo --preserve-env gcsfuse --implicit-dirs --only-dir checkpoints-gcp/checkpoints dvc-cse /tmp/checkpoints
         env:
           GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
 
