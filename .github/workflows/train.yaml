@@ -51,6 +51,8 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
 
+      - run: date > /tmp/checkpoints/$RANDOM && cat /tmp/checkpoints/*
+
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
