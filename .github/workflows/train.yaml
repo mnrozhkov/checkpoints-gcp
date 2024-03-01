@@ -46,9 +46,10 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
           
       - run: |
-          sudo tee /etc/apt/sources.list.d/gcsfuse.list <<< "deb [signed-by=/usr/share/keyrings/cloud.google.asc] https://packages.cloud.google.com/apt gcsfuse-$(lsb_release -c -s) main"
-          curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-      - run: |
+          echo "deb [signed-by=/usr/share/keyrings/cloud.google.asc] https://packages.cloud.google.com/apt gcsfuse-$(lsb_release -c -s) main" |
+            sudo tee /etc/apt/sources.list.d/gcsfuse.list
+          curl https://packages.cloud.google.com/apt/doc/apt-key.gpg |
+            sudo tee /usr/share/keyrings/cloud.google.asc
           sudo apt-get update && sudo apt-get install fuse gcsfuse
       - run: |
           export GOOGLE_APPLICATION_CREDENTIALS="$(mktemp)"
@@ -56,7 +57,7 @@ jobs:
           sudo --preserve-env gcsfuse --implicit-dirs --only-dir checkpoints-gcp/checkpoints dvc-cse .
         env:
           GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
-          
+
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
