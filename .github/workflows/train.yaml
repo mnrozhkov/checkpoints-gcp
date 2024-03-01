@@ -47,6 +47,7 @@ jobs:
       - run: |
           export GOOGLE_APPLICATION_CREDENTIALS="$(mktemp)"
           printenv GOOGLE_APPLICATION_CREDENTIALS_DATA > "$GOOGLE_APPLICATION_CREDENTIALS"
+          mkdir --parents /tmp/checkpoints
           sudo --preserve-env gcsfuse --implicit-dirs --only-dir checkpoints-gcp/checkpoints dvc-cse /tmp/checkpoints
         env:
           GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
