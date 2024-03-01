@@ -24,7 +24,7 @@ stages:
   train:
     cmd: |
       mkdir -p models/checkpoints models/checkpoints_resume
-      python src/train.py --resume_checkpoint ${train.resume_checkpoint}
+      python src/train.py
     deps:
     - data/features.csv
     outs:
@@ -45,6 +45,7 @@ artifacts:
     - lightning
     meta:
       resumed_from: models/checkpoints_resume/mnist-gammy-nave-03-val_loss0.057.ckpt
+
 params:
 - dvclive/params.yaml
 metrics:

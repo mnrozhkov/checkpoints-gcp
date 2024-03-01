@@ -1,18 +1,17 @@
 import argparse
-from functools import cache
 import os
-import re
-import shutil
 from fsspec.implementations.local import LocalFileSystem
 import lightning.pytorch as pl
 from lightning.pytorch.callbacks import ModelCheckpoint
-import pandas as pd
 import torch
 from torchvision.datasets import MNIST
 import torchvision.transforms as transforms
 
+import dvc.api
 from dvclive import Live
 from dvclive.lightning import DVCLiveLogger
+
+from utils import load_checkpoints_from_gs
 
 
 class LitAutoEncoder(pl.LightningModule):
@@ -52,10 +51,7 @@ class LitAutoEncoder(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
         return optimizer
 
-def train(resume_checkpoint: str | None = None):    
-
-    print("Training Random Forest model - START")
-    print("Resuming from checkpoint: ", resume_checkpoint)
+def train():    
     
     transform = transforms.ToTensor()
     train_set = MNIST(root="data", download=True, train=True, transform=transform)
@@ -63,14 +59,12 @@ def train(resume_checkpoint: str | None = None):
     train_loader = torch.utils.data.DataLoader(train_set)
     validation_loader = torch.utils.data.DataLoader(validation_set)
 
-    # 
     model = LitAutoEncoder(encoder_size=64, lr=0.01)
-
 
     DVC_EXP_NAME = os.environ.get('DVC_EXP_NAME', None)
     checkpoint_callback = ModelCheckpoint(
         # dirpath='models/checkpoints/',
-        dirpath="gs://dvc-cse/checkpoints-gcp/checkpoints",
+        dirpath=f"gs://dvc-cse/checkpoints-gcp/checkpoints/{DVC_EXP_NAME}",
         filename=f'mnist-{DVC_EXP_NAME}'+'-{epoch:02d}-val_loss{val_mse:.3f}',
         auto_insert_metric_name=False,
         monitor='val_mse',
@@ -80,12 +74,9 @@ def train(resume_checkpoint: str | None = None):
         verbose=True,
     )
 
-    
-    import dvc.api
     params = dvc.api.params_show()
     resume_checkpoint = params.get('train').get('resume_checkpoint', None)
     is_resume = True if resume_checkpoint else False
-
 
     with Live(save_dvc_exp=True, dvcyaml=True, resume=is_resume) as live:
 
@@ -107,10 +98,14 @@ def train(resume_checkpoint: str | None = None):
         # Log additional metrics after training
         print("Best model path: ", checkpoint_callback.best_model_path)
 
-        import gcsfs
-        # fs = LocalFileSystem()
-        fs = gcsfs.GCSFileSystem(project='iterative-sandbox')
+        # import gcsfs
+        # fs = gcsfs.GCSFileSystem(project='iterative-sandbox')
+        load_checkpoints_from_gs(
+            project="iterative-sandbox", 
+            source_dir=f"dvc-cse/checkpoints-gcp/checkpoints/{DVC_EXP_NAME}", 
+            dst_dir="models/checkpoints")
 
+        fs = LocalFileSystem()
         if fs.exists(checkpoint_callback.best_model_path):
             
             model_path = checkpoint_callback.best_model_path
@@ -131,8 +126,9 @@ def train(resume_checkpoint: str | None = None):
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Train your model.')
-    parser.add_argument('--resume_checkpoint', help='Path to a checkpoint to resime training', default=None)
+    # parser.add_argument('--resume_checkpoint', help='Path to a checkpoint to resime training', default=None)
     args = parser.parse_args()
     
     # Call train function with the value of resume argument
-    train(resume_checkpoint=args.resume_checkpoint)
+    # train(resume_checkpoint=args.resume_checkpoint)
+    train()

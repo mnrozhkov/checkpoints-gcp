@@ -35,8 +35,7 @@ stages:
       md5: 7f30b6c459b0cf0bacc894414b0386b1
       size: 9915
   train:
-    cmd: "mkdir -p models/checkpoints models/checkpoints_resume\npython src/train.py
-      --resume_checkpoint models/checkpoints_resume/mnist-gammy-nave-03-val_loss0.057.ckpt\n"
+    cmd: "mkdir -p models/checkpoints models/checkpoints_resume\npython src/train.py\n"
     deps:
     - path: data/features.csv
       hash: md5
@@ -45,9 +44,9 @@ stages:
     outs:
     - path: models/checkpoints
       hash: md5
-      md5: d751713988987e9331980363e24189ce.dir
-      size: 0
-      nfiles: 0
+      md5: 235f4a12538fe594894e41903b60124b.dir
+      size: 3695690
+      nfiles: 3
     - path: models/checkpoints_resume
       hash: md5
       md5: 1ebae4b2dd0b5bed5539d25e39f5b9d7.dir
