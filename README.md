@@ -34,7 +34,7 @@ dvc exp run -s train  -S "train.is_resume=null" -f
 ### Resume from a checkpoint (with GCS as storage backend)
 
 - Find the checkpoint you want to resume from in GCS `dvc-cse/checkpoints-gcp/checkpoints`  
-- Run a new DVC exp with the checkpoint path  `dvc exp run -s train -S "train.resume_checkpoint=models/checkpoints_resume/PATH_TO_CKPT`
+- Run a new DVC exp with the checkpoint path  `dvc exp run -s train -S "train.resume_checkpoint=PATH_TO_CKPT`
 
 Example
 
