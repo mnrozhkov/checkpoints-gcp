@@ -44,8 +44,8 @@ artifacts:
     - autoencoder
     - lightning
     meta:
-      resumed_from: models/checkpoints_resume/mnist-gammy-nave-03-val_loss0.057.ckpt
-
+      resumed_from: 
+        gs://dvc-cse/checkpoints-gcp/checkpoints/basic-lats/mnist-basic-lats-02-val_loss0.062.ckpt
 params:
 - dvclive/params.yaml
 metrics:
