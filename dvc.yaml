@@ -39,6 +39,15 @@ artifacts:
   best:
     path: models/model.ckpt
     type: model
+  mnist_LitAutoEncoder:
+    path: models/model.ckpt
+    type: model
+    labels:
+    - mnist
+    - autoencoder
+    - lightning
+    meta:
+      resumed_from: models/checkpoints_resume/mnist-gammy-nave-03-val_loss0.057.ckpt
 params:
 - dvclive/params.yaml
 metrics:

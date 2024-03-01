@@ -85,17 +85,16 @@ def train(resume_checkpoint: str | None = None):
 
     params = dvc.api.params_show()
     resume_checkpoint = params.get('train').get('resume_checkpoint', None)
-
     is_resume = True if resume_checkpoint else False
-    print("is_resume: ", is_resume)
-    print(resume_checkpoint)
-    print(type(resume_checkpoint))
+    # print("is_resume: ", is_resume)
+    # print(resume_checkpoint)
+    # print(type(resume_checkpoint))
     # is_resume = params.get('train').get('is_resume', False)
     # if is_resume and fs.exists("models/last.ckpt"):
     #     CKPT_PATH="models/last.ckpt"
     #     print("Resuming from checkpoint: ", CKPT_PATH)
 
-    with Live(save_dvc_exp=False, dvcyaml=True, resume=is_resume) as live:
+    with Live(save_dvc_exp=True, dvcyaml=True, resume=is_resume) as live:
 
         trainer = pl.Trainer(
             limit_train_batches=200,
@@ -113,18 +112,19 @@ def train(resume_checkpoint: str | None = None):
 
         # Log additional metrics after training
         if fs.exists(checkpoint_callback.best_model_path):
-            print(checkpoint_callback.best_model_path)
+            
             model_path = checkpoint_callback.best_model_path
             best_model_dst = "models/model.ckpt"
             print(f"Copying checkpoint {model_path} to {best_model_dst}")
-            shutil.copy(model_path, best_model_dst)
-            live.log_artifact(best_model_dst, name="best", type="model", copy=False)
 
-        # # Copy the last checkpoint to models folder
-        # if fs.exists(checkpoint_callback.last_model_path):
-        #     print(f"Copying checkpoint {checkpoint_callback.last_model_path} to models/last.ckpt")
-        #     shutil.copy(checkpoint_callback.last_model_path, "models/last.ckpt")
-        
+            shutil.copy(model_path, best_model_dst)
+            live.log_artifact(
+                best_model_dst, 
+                name="mnist_LitAutoEncoder", 
+                type="model", 
+                labels=["mnist", "autoencoder", "lightning"],
+                meta={"resumed_from": resume_checkpoint}
+            )
 
 if __name__ == "__main__":
     
