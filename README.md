@@ -20,11 +20,12 @@ dvc repro
 
 ### Train with checkpoints
 
-- Run `dvc exp run -s train  -S "train.is_resume=false" -f` to train the model
+- Run `dvc exp run -s train  -S "train.is_resume=null" -f` to train the model
 - During training, checkpoints will be saved in the `models/checkpoints` 
 - Checkpoints are saved every epoch and names as `model_epoch_{epoch}.ckpt`
 - Also, the last checkpoint saved with name `models/last.ckpt`
 - The best checkpoint will be saved in `models/model.ckpt`
+- Remove 
 
 ### Resume from a checkpoint (with GCS as storage backend)
 
@@ -36,4 +37,4 @@ dvc repro
   - `dvc commit`
   - `git commit -m "Update checkpoints"`
   - `git push` & `dvc push`
-- Run `dvc exp run -s train  -S "train.is_resume=true"` to resume training from the `models/last.ckpt`
+- Run `dvc exp run -s train -S "train.resume_checkpoint=models/checkpoints_resume/PATH_TO_CKPT` to resume training from the `models/last.ckpt`

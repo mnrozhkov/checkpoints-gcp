@@ -69,7 +69,8 @@ def train(resume_checkpoint: str | None = None):
 
     DVC_EXP_NAME = os.environ.get('DVC_EXP_NAME', None)
     checkpoint_callback = ModelCheckpoint(
-        dirpath='models/checkpoints/',
+        # dirpath='models/checkpoints/',
+        dirpath="gs://dvc-cse/checkpoints-gcp/checkpoints",
         filename=f'mnist-{DVC_EXP_NAME}'+'-{epoch:02d}-val_loss{val_mse:.3f}',
         auto_insert_metric_name=False,
         monitor='val_mse',
@@ -79,24 +80,17 @@ def train(resume_checkpoint: str | None = None):
         verbose=True,
     )
 
-    fs = LocalFileSystem()
-    CKPT_PATH=None
+    
     import dvc.api
-
     params = dvc.api.params_show()
     resume_checkpoint = params.get('train').get('resume_checkpoint', None)
     is_resume = True if resume_checkpoint else False
-    # print("is_resume: ", is_resume)
-    # print(resume_checkpoint)
-    # print(type(resume_checkpoint))
-    # is_resume = params.get('train').get('is_resume', False)
-    # if is_resume and fs.exists("models/last.ckpt"):
-    #     CKPT_PATH="models/last.ckpt"
-    #     print("Resuming from checkpoint: ", CKPT_PATH)
+
 
     with Live(save_dvc_exp=True, dvcyaml=True, resume=is_resume) as live:
 
         trainer = pl.Trainer(
+            # default_root_dir="gs://dvc-cse/checkpoints-gcp/checkpoints",
             limit_train_batches=200,
             limit_val_batches=100,
             max_epochs=6,
@@ -111,13 +105,20 @@ def train(resume_checkpoint: str | None = None):
         )
 
         # Log additional metrics after training
+        print("Best model path: ", checkpoint_callback.best_model_path)
+
+        import gcsfs
+        # fs = LocalFileSystem()
+        fs = gcsfs.GCSFileSystem(project='iterative-sandbox')
+
         if fs.exists(checkpoint_callback.best_model_path):
             
             model_path = checkpoint_callback.best_model_path
             best_model_dst = "models/model.ckpt"
             print(f"Copying checkpoint {model_path} to {best_model_dst}")
+            # shutil.copy(model_path, best_model_dst)
+            fs.get(model_path, best_model_dst)
 
-            shutil.copy(model_path, best_model_dst)
             live.log_artifact(
                 best_model_dst, 
                 name="mnist_LitAutoEncoder", 
