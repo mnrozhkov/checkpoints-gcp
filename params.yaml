@@ -1,4 +1,4 @@
 train:
-  is_resume: True
   encoder_size: 64
   lr: 0.01
+  resume_checkpoint: null # "models/checkpoints_resume/mnist-optic-banc-05-val_loss0.058.ckpt" # null or path to checkpoint

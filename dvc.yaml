@@ -22,25 +22,27 @@ stages:
     - data/features.csv
 
   train:
-    cmd: python src/train.py
+    cmd: |
+      mkdir -p models/checkpoints models/checkpoints_resume
+      python src/train.py --resume_checkpoint ${train.resume_checkpoint}
     deps:
     - data/features.csv
     outs:
     - models/checkpoints
+    - models/checkpoints_resume:
+        persist: true
     - models/model.ckpt:
         persist: true
         cache: false
-    - models/last.ckpt:
-        persist: true
 
-plots:
-- dvclive/plots/metrics:
-    x: step
-metrics:
-- dvclive/metrics.json
-params:
-- dvclive/params.yaml
 artifacts:
   best:
     path: models/model.ckpt
     type: model
+params:
+- dvclive/params.yaml
+metrics:
+- dvclive/metrics.json
+plots:
+- dvclive/plots/metrics:
+    x: step

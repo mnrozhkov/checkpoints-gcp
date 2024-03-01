@@ -1,5 +1,7 @@
 import argparse
 from functools import cache
+import os
+import re
 import shutil
 from fsspec.implementations.local import LocalFileSystem
 import lightning.pytorch as pl
@@ -50,9 +52,10 @@ class LitAutoEncoder(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
         return optimizer
 
-def train():
+def train(resume_checkpoint: str | None = None):    
 
     print("Training Random Forest model - START")
+    print("Resuming from checkpoint: ", resume_checkpoint)
     
     transform = transforms.ToTensor()
     train_set = MNIST(root="data", download=True, train=True, transform=transform)
@@ -62,31 +65,35 @@ def train():
 
     # 
     model = LitAutoEncoder(encoder_size=64, lr=0.01)
+
+
+    DVC_EXP_NAME = os.environ.get('DVC_EXP_NAME', None)
     checkpoint_callback = ModelCheckpoint(
         dirpath='models/checkpoints/',
-        filename='mnist-{epoch:02d}',
+        filename=f'mnist-{DVC_EXP_NAME}'+'-{epoch:02d}-val_loss{val_mse:.3f}',
+        auto_insert_metric_name=False,
+        monitor='val_mse',
+        mode='min',
+        save_top_k=3,
+        save_last=False,
         verbose=True,
-        save_last=True,
-        save_top_k=-1,
     )
-
-    # trainer = pl.Trainer(
-    #     limit_train_batches=200,
-    #     limit_val_batches=100,
-    #     max_epochs=5,
-    #     logger=DVCLiveLogger(log_model=True, save_dvc_exp=False, dvcyaml=False),
-    #     callbacks=[checkpoint_callback]
-    # )
 
     fs = LocalFileSystem()
     CKPT_PATH=None
     import dvc.api
 
     params = dvc.api.params_show()
-    is_resume = params.get('train').get('is_resume', False)
-    if is_resume and fs.exists("models/last.ckpt"):
-        CKPT_PATH="models/last.ckpt"
-        print("Resuming from checkpoint: ", CKPT_PATH)
+    resume_checkpoint = params.get('train').get('resume_checkpoint', None)
+
+    is_resume = True if resume_checkpoint else False
+    print("is_resume: ", is_resume)
+    print(resume_checkpoint)
+    print(type(resume_checkpoint))
+    # is_resume = params.get('train').get('is_resume', False)
+    # if is_resume and fs.exists("models/last.ckpt"):
+    #     CKPT_PATH="models/last.ckpt"
+    #     print("Resuming from checkpoint: ", CKPT_PATH)
 
     with Live(save_dvc_exp=False, dvcyaml=True, resume=is_resume) as live:
 
@@ -101,28 +108,29 @@ def train():
             model, 
             train_loader, 
             validation_loader,
-            ckpt_path=CKPT_PATH
+            ckpt_path=resume_checkpoint
         )
 
         # Log additional metrics after training
-        if checkpoint_callback.best_model_path:
+        if fs.exists(checkpoint_callback.best_model_path):
             print(checkpoint_callback.best_model_path)
             model_path = checkpoint_callback.best_model_path
             best_model_dst = "models/model.ckpt"
+            print(f"Copying checkpoint {model_path} to {best_model_dst}")
             shutil.copy(model_path, best_model_dst)
             live.log_artifact(best_model_dst, name="best", type="model", copy=False)
 
-        # Copy the last checkpoint to models folder
-        if checkpoint_callback.last_model_path:
-            shutil.copy(checkpoint_callback.last_model_path, "models/last.ckpt")
+        # # Copy the last checkpoint to models folder
+        # if fs.exists(checkpoint_callback.last_model_path):
+        #     print(f"Copying checkpoint {checkpoint_callback.last_model_path} to models/last.ckpt")
+        #     shutil.copy(checkpoint_callback.last_model_path, "models/last.ckpt")
         
 
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Train your model.')
-    # parser.add_argument('--resume', action='store_true', help='Resume training if True, start new training otherwise (default: False)')
+    parser.add_argument('--resume_checkpoint', help='Path to a checkpoint to resime training', default=None)
     args = parser.parse_args()
     
     # Call train function with the value of resume argument
-    # train(resume=args.resume)
-    train()
+    train(resume_checkpoint=args.resume_checkpoint)
