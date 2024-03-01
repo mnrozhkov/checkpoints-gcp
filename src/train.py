@@ -124,7 +124,8 @@ def train(resume_checkpoint: str | None = None):
                 name="mnist_LitAutoEncoder", 
                 type="model", 
                 labels=["mnist", "autoencoder", "lightning"],
-                meta={"resumed_from": resume_checkpoint}
+                meta={"resumed_from": resume_checkpoint}, 
+                cache=False
             )
 
 if __name__ == "__main__":
