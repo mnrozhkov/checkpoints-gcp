@@ -36,30 +36,27 @@ jobs:
   runner-job:
     needs: deploy-runner
     runs-on: [ self-hosted, cml ]
-    environment: cloud
-    container:
-      image: iterativeai/cml:latest
-      options: --ipc host
-      
+    environment: cloud      
     steps:
-      - uses: mxschmitt/action-tmate@v3
+      - run: |
+          sudo tee /etc/apt/sources.list.d/gcsfuse.list <<< "deb [signed-by=/usr/share/keyrings/cloud.google.asc] https://packages.cloud.google.com/apt gcsfuse-$(lsb_release -c -s) main"
+          curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+      - run: |
+          sudo apt-get update && sudo apt-get install fuse gcsfuse
+      - run: |
+          export GOOGLE_APPLICATION_CREDENTIALS="$(mktemp)"
+          printenv GOOGLE_APPLICATION_CREDENTIALS_DATA > "$GOOGLE_APPLICATION_CREDENTIALS"
+          sudo --preserve-env gcsfuse --implicit-dirs --only-dir checkpoints-gcp/checkpoints dvc-cse .
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+
+      - if: success() || failure()
+        uses: mxschmitt/action-tmate@v3
         with:
           limit-access-to-actor: true
         env:
           GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
-      - run: |
-          sudo tee /etc/apt/sources.list.d/gcsfuse.list <<< "deb http://packages.cloud.google.com/apt gcsfuse-$(lsb_release -cs) main"
-          curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-          sudo apt-get update
-      - run: |
-          sudo apt-get install fuse gcsfuse
-      - run: |
-          export GOOGLE_APPLICATION_CREDENTIALS="$(mktemp)"
-          printenv GOOGLE_APPLICATION_CREDENTIALS_DATA > "$GOOGLE_APPLICATION_CREDENTIALS"
-          sudo -E gcsfuse --implicit-dirs --only-dir checkpoints-gcp/checkpoints dvc-cse .
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
-
+          
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
