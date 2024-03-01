@@ -1,6 +1,6 @@
 name: Train on-spot VM and save checkpoints
 
-on: workflow_dispatch
+on: push
 
 permissions:
   contents: write
@@ -10,6 +10,7 @@ permissions:
 jobs:
 
   deploy-runner:
+    if: false
     runs-on: ubuntu-latest
     environment: cloud
     
@@ -38,10 +39,15 @@ jobs:
     runs-on: [ self-hosted, cml ]
     environment: cloud
     container:
-      image: iterativeai/cml:latest-gpu
-      options: --gpus all --ipc host
+      image: iterativeai/cml:latest
+      options: --ipc host
       
     steps:
+      - uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
       - run: |
           sudo tee /etc/apt/sources.list.d/gcsfuse.list <<< "deb http://packages.cloud.google.com/apt gcsfuse-$(lsb_release -cs) main"
           curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
