@@ -10,7 +10,6 @@ permissions:
 jobs:
 
   deploy-runner:
-    if: false
     runs-on: ubuntu-latest
     environment: cloud
     
@@ -35,7 +34,7 @@ jobs:
             --cloud-spot=true
 
   runner-job:
-    # needs: deploy-runner
+    needs: deploy-runner
     runs-on: [ self-hosted, cml ]
     environment: cloud
     container:
