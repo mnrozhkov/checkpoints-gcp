@@ -1,2 +1,3 @@
-/model.ckpt
 /checkpoints
+/last.ckpt
+/checkpoints_resume

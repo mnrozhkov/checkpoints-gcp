@@ -22,23 +22,34 @@ stages:
     - data/features.csv
 
   train:
-    cmd: python src/train.py
+    cmd: |
+      mkdir -p models/checkpoints models/checkpoints_resume
+      python src/train.py
     deps:
     - data/features.csv
     outs:
     - models/checkpoints
-    - models/model.ckpt:
+    - models/checkpoints_resume:
         persist: true
-        cache: false
+    # - models/model.ckpt:
+    #     persist: true
+    #     cache: false
 
+artifacts:
+  mnist_LitAutoEncoder:
+    path: models/model.ckpt
+    type: model
+    labels:
+    - mnist
+    - autoencoder
+    - lightning
+    meta:
+      resumed_from: 
+        gs://dvc-cse/checkpoints-gcp/checkpoints/basic-lats/mnist-basic-lats-02-val_loss0.062.ckpt
+params:
+- dvclive/params.yaml
+metrics:
+- dvclive/metrics.json
 plots:
 - dvclive/plots/metrics:
     x: step
-metrics:
-- dvclive/metrics.json
-params:
-- dvclive/params.yaml
-artifacts:
-  best:
-    path: models/model.ckpt
-    type: model

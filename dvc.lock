@@ -32,22 +32,23 @@ stages:
     outs:
     - path: data/features.csv
       hash: md5
-      md5: 85f4c130927853a84b30c8fe227411b1
-      size: 9895
+      md5: 7f30b6c459b0cf0bacc894414b0386b1
+      size: 9915
   train:
-    cmd: python src/train.py
+    cmd: "mkdir -p models/checkpoints models/checkpoints_resume\npython src/train.py\n"
     deps:
     - path: data/features.csv
       hash: md5
-      md5: 85f4c130927853a84b30c8fe227411b1
-      size: 9895
+      md5: 7f30b6c459b0cf0bacc894414b0386b1
+      size: 9915
     outs:
     - path: models/checkpoints
       hash: md5
-      md5: 6841c320db7d1a0d7e0bc1ec2a324bb3.dir
-      size: 7388402
-      nfiles: 6
-    - path: models/model.ckpt
+      md5: 9318d642348a38fa281100c525a258cf.dir
+      size: 3695626
+      nfiles: 3
+    - path: models/checkpoints_resume
       hash: md5
-      md5: d9700be83948e8d03cdf93f5527bcca9
-      size: 1231411
+      md5: 1ebae4b2dd0b5bed5539d25e39f5b9d7.dir
+      size: 1232109
+      nfiles: 1
