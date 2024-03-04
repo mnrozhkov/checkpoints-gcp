@@ -1,16 +1,18 @@
 import argparse
-from functools import cache
-import shutil
+import gcsfs
+import os
 from fsspec.implementations.local import LocalFileSystem
 import lightning.pytorch as pl
 from lightning.pytorch.callbacks import ModelCheckpoint
-import pandas as pd
 import torch
 from torchvision.datasets import MNIST
 import torchvision.transforms as transforms
 
+import dvc.api
 from dvclive import Live
 from dvclive.lightning import DVCLiveLogger
+
+from utils import load_checkpoints_from_gs
 
 
 class LitAutoEncoder(pl.LightningModule):
@@ -50,69 +52,89 @@ class LitAutoEncoder(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
         return optimizer
 
-def train(resume=False):
-
-    print("Training Random Forest model - START")
+def train():    
     
+    # Load the MNIST dataset
     transform = transforms.ToTensor()
     train_set = MNIST(root="data", download=True, train=True, transform=transform)
     validation_set = MNIST(root="data", download=True, train=False, transform=transform)
     train_loader = torch.utils.data.DataLoader(train_set)
     validation_loader = torch.utils.data.DataLoader(validation_set)
 
-    # 
+    # Create a model
     model = LitAutoEncoder(encoder_size=64, lr=0.01)
+
+    # Create a ModelCheckpoint callback
+    DVC_EXP_NAME = os.environ.get('DVC_EXP_NAME', None)
     checkpoint_callback = ModelCheckpoint(
-        dirpath='mnt/disk1/checkpoints/',
-        filename='mnist-{epoch:02d}',
+        # dirpath='models/checkpoints/',    # LOCAL
+        dirpath=f"gs://dvc-cse/checkpoints-gcp/checkpoints/{DVC_EXP_NAME}",
+        filename=f'mnist-{DVC_EXP_NAME}'+'-{epoch:02d}-val_loss{val_mse:.3f}',
+        auto_insert_metric_name=False,
+        monitor='val_mse',
+        mode='min',
+        save_top_k=3,
+        save_last=False,
         verbose=True,
-        save_last=True,
-        save_top_k=-1,
     )
 
-    # trainer = pl.Trainer(
-    #     limit_train_batches=200,
-    #     limit_val_batches=100,
-    #     max_epochs=5,
-    #     logger=DVCLiveLogger(log_model=True, save_dvc_exp=False, dvcyaml=False),
-    #     callbacks=[checkpoint_callback]
-    # )
+    # Load the parameters from the dvc.yaml file
+    params = dvc.api.params_show()
+    resume_checkpoint = params.get('train').get('resume_checkpoint', None)
+    is_resume = True if resume_checkpoint else False
 
-    fs = LocalFileSystem()
-    CKPT_PATH=None
-    if resume and fs.exists("mnt/disk1/checkpoints/last.ckpt"):
-        CKPT_PATH="mnt/disk1/checkpoints/last.ckpt"
-        print("Resuming from checkpoint: ", CKPT_PATH)
-
-    with Live(save_dvc_exp=False, dvcyaml=True) as live:
+    # Train the model with Live context manager
+    with Live(save_dvc_exp=True, dvcyaml=True, resume=is_resume) as live:
 
         trainer = pl.Trainer(
             limit_train_batches=200,
             limit_val_batches=100,
-            max_epochs=5,
-            logger=DVCLiveLogger(log_model=False, experiment=live),
+            max_epochs=6,
+            logger=DVCLiveLogger(log_model=False, experiment=live), # Pass "live" context manager to DVCLiveLogger
             callbacks=[checkpoint_callback]
         )
+
+        # Train a model with or without resuming
         trainer.fit(
             model, 
             train_loader, 
             validation_loader,
-            ckpt_path=CKPT_PATH
+            ckpt_path=resume_checkpoint # None or path to a checkpoint
         )
 
         # Log additional metrics after training
-        model_path = checkpoint_callback.best_model_path
-        # best_model_dst = "dvclive/artifacts/best_model.ckpt"
-        best_model_dst = "models/model.ckpt"
-        shutil.copy(model_path, best_model_dst)
-        live.log_artifact(best_model_dst, name="best", type="model", copy=False)
+        print("Best model path: ", checkpoint_callback.best_model_path)
         
+        # Load checkpoints to track with DVC
+        load_checkpoints_from_gs(
+            project="iterative-sandbox", 
+            source_dir=f"dvc-cse/checkpoints-gcp/checkpoints/{DVC_EXP_NAME}", 
+            dst_dir="models/checkpoints")
+
+        # Track the best model with DVC
+        # fs = LocalFileSystem()
+        fs = gcsfs.GCSFileSystem(project='iterative-sandbox')
+        if fs.exists(checkpoint_callback.best_model_path):
+            
+            model_path = checkpoint_callback.best_model_path
+            best_model_dst = "models/model.ckpt"
+            print(f"Copying checkpoint {model_path} to {best_model_dst}")
+            fs.get(model_path, best_model_dst)
+
+            # Log the best model with DVCLive (automatic registering in DVC Studio)
+            live.log_artifact(
+                best_model_dst, 
+                name="mnist_LitAutoEncoder", 
+                type="model", 
+                labels=["mnist", "autoencoder", "lightning"],
+                meta={"resumed_from": resume_checkpoint}, 
+                cache=False
+            )
 
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Train your model.')
-    parser.add_argument('--resume', action='store_true', help='Resume training if True, start new training otherwise (default: False)')
     args = parser.parse_args()
     
     # Call train function with the value of resume argument
-    train(resume=args.resume)
+    train()

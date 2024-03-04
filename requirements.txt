@@ -1,7 +1,7 @@
-dvc>=3.44.0
-dvclive[lightning]>=3.44.0
+dvc[gs]>=3.42.0
+dvclive[lightning]>=3.41.0
 joblib
-lightning
+lightning>=2.2.0,<3
 pandas
 scikit-learn
 torchvision>=0.17.1,<1

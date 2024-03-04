@@ -1,0 +1,79 @@
+name: Train on-spot VM and save checkpoints
+
+on: workflow_dispatch
+
+permissions:
+  contents: write
+  id-token: write
+  pull-requests: write
+  
+jobs:
+
+  deploy-runner:
+    runs-on: ubuntu-latest
+    environment: cloud
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.parent-sha || '' }}
+      - uses: iterative/setup-cml@v2
+      
+      - name: Create Runner
+        env:
+          REPO_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+        run: |
+          cml runner launch --single \
+            --labels=cml \
+            --idle-timeout=300 \
+            --cloud=gcp \
+            --cloud-region=us-central1-a \
+            --cloud-type=n2-standard-64 \
+            --cloud-hdd-size=40 \
+            --cloud-spot=true
+
+  runner-job:
+    needs: deploy-runner
+    runs-on: [ self-hosted, cml ]
+
+    environment: cloud
+    container:
+      image: iterativeai/cml:latest
+      options: --ipc host
+      
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          ref: gcp
+          fetch-depth: 0
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          
+      - run: |
+          pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+
+      - name: Train
+        env:
+          REPO_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          DVC_STUDIO_TOKEN: ${{ secrets.DVC_STUDIO_TOKEN }}
+          DVCLIVE_LOGLEVEL: DEBUG
+        run: |
+          # cml ci --fetch-depth 0
+          dvc exp run --pull --allow-missing 
+          dvc remote add --local push_remote gs://dvc-cse/checkpoints-gcp/remote
+          dvc exp push origin -r push_remote
+
+      - name: Commit-based Sharing
+        if: github.actor == 'iterative-studio[bot]'
+        env:
+          REPO_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          dvc push -r push_remote
+          cml pr --squash --skip-ci .
+          echo "## Metrics" > report.md
+          dvc metrics diff main --md >> report.md
+          echo "## Params" >> report.md
+          dvc params diff main --md >> report.md
+          cml comment create --pr report.md
