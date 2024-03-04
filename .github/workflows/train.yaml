@@ -36,19 +36,29 @@ jobs:
   runner-job:
     needs: deploy-runner
     runs-on: [ self-hosted, cml ]
-    environment: cloud
-    container:
-      image: iterativeai/cml:latest-gpu
-      options: --gpus all --ipc host
-      
-    steps:
+    environment: cloud      
+    steps:          
+      - run: |
+          echo "deb [signed-by=/usr/share/keyrings/cloud.google.asc] https://packages.cloud.google.com/apt gcsfuse-$(lsb_release -c -s) main" |
+            sudo tee /etc/apt/sources.list.d/gcsfuse.list
+          curl https://packages.cloud.google.com/apt/doc/apt-key.gpg |
+            sudo tee /usr/share/keyrings/cloud.google.asc
+          sudo apt-get update && sudo apt-get install fuse gcsfuse
+      - run: |
+          export GOOGLE_APPLICATION_CREDENTIALS="$(mktemp)"
+          printenv GOOGLE_APPLICATION_CREDENTIALS_DATA > "$GOOGLE_APPLICATION_CREDENTIALS"
+          mkdir --parents /tmp/checkpoints
+          sudo --preserve-env gcsfuse --implicit-dirs --only-dir checkpoints-gcp/checkpoints dvc-cse /tmp/checkpoints
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
           ref: gcp
           fetch-depth: 0
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-
+          
       - run: pip install -r requirements.txt
 
       - name: Train
