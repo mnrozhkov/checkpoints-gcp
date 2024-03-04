@@ -1,4 +1,4 @@
-dvc[gs]>=3.48.0
+dvc[gs]>=3.42.0
 dvclive[lightning]>=3.44.0
 joblib
 lightning>=2.2.0,<3
