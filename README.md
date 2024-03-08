@@ -14,11 +14,8 @@ pip install -r requirements.txt
 
 ## Run
 
-```bash
-dvc repro 
-```
 
-### Train with checkpoints
+### 1 - Train with checkpoints
 
 - Run `dvc exp run -s train  -S "train.resume_checkpoint=null" -f` to train the model
 - During training, checkpoints will be saved to `dvc-cse/checkpoints-gcp/checkpoints`
@@ -31,7 +28,7 @@ Example
 dvc exp run -s train  -S "train.resume_checkpoint=null" -f
 ```
 
-### Resume from a checkpoint (with GCS as storage backend)
+### 2 -Resume from a checkpoint (with GCS as storage backend)
 
 - Find the checkpoint you want to resume from in GCS `dvc-cse/checkpoints-gcp/checkpoints`  
 - Run a new DVC exp with the checkpoint path  `dvc exp run -s train -S "train.resume_checkpoint=PATH_TO_CKPT`
