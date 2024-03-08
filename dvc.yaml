@@ -41,7 +41,8 @@ artifacts:
     - autoencoder
     - lightning
     meta:
-      resumed_from:
+      resumed_from: 
+        gs://dvc-cse/checkpoints-gcp/checkpoints/ocher-whop/mnist-ocher-whop-01-val_loss0.064.ckpt
 params:
 - dvclive/params.yaml
 metrics:
