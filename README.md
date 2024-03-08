@@ -20,7 +20,7 @@ dvc repro
 
 ### Train with checkpoints
 
-- Run `dvc exp run -s train  -S "train.is_resume=null" -f` to train the model
+- Run `dvc exp run -s train  -S "train.resume_checkpoint=null" -f` to train the model
 - During training, checkpoints will be saved to `dvc-cse/checkpoints-gcp/checkpoints`
 - Checkpoints are saved every epoch and names as `model_{exp_name}_{epoch}_{metric}.ckpt`
 - The best checkpoint will be saved in `models/model.ckpt`

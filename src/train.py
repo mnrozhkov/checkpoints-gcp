@@ -67,7 +67,7 @@ def train():
     # Create a ModelCheckpoint callback
     DVC_EXP_NAME = os.environ.get('DVC_EXP_NAME', None)
     checkpoint_callback = ModelCheckpoint(
-        # dirpath='models/checkpoints/',    # LOCAL
+        # Save checkpoints to GCS bucket
         dirpath=f"gs://dvc-cse/checkpoints-gcp/checkpoints/{DVC_EXP_NAME}",
         filename=f'mnist-{DVC_EXP_NAME}'+'-{epoch:02d}-val_loss{val_mse:.3f}',
         auto_insert_metric_name=False,
@@ -112,7 +112,6 @@ def train():
             dst_dir="models/checkpoints")
 
         # Track the best model with DVC
-        # fs = LocalFileSystem()
         fs = gcsfs.GCSFileSystem(project='iterative-sandbox')
         if fs.exists(checkpoint_callback.best_model_path):
             

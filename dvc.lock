@@ -44,8 +44,8 @@ stages:
     outs:
     - path: models/checkpoints
       hash: md5
-      md5: bbe90c00a4fd0143eb0d3c73835360df.dir
-      size: 3696007
+      md5: 588bcf70413d33138e9e8c3fec1d6ec2.dir
+      size: 3696135
       nfiles: 3
     - path: models/checkpoints_resume
       hash: md5

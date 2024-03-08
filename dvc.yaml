@@ -31,9 +31,6 @@ stages:
     - models/checkpoints
     - models/checkpoints_resume:
         persist: true
-    # - models/model.ckpt:
-    #     persist: true
-    #     cache: false
 
 artifacts:
   mnist_LitAutoEncoder:
