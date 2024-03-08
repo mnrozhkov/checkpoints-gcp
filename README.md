@@ -28,7 +28,7 @@ dvc repro
 Example
 
 ```bash
-dvc exp run -s train  -S "train.is_resume=null" -f
+dvc exp run -s train  -S "train.resume_checkpoint=null" -f
 ```
 
 ### Resume from a checkpoint (with GCS as storage backend)

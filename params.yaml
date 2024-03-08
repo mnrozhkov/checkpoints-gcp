@@ -1,5 +1,4 @@
 train:
   encoder_size: 64
   lr: 0.01
-  resume_checkpoint: 
-    gs://dvc-cse/checkpoints-gcp/checkpoints/basic-lats/mnist-basic-lats-02-val_loss0.062.ckpt                     # null or path to checkpoint
+  resume_checkpoint:               # null or path to checkpoint
