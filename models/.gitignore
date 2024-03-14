@@ -1,3 +1,4 @@
 /checkpoints
 /last.ckpt
 /checkpoints_resume
+/model_test.ckpt

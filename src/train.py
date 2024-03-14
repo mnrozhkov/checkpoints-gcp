@@ -119,6 +119,7 @@ def train():
             best_model_dst = "models/model.ckpt"
             print(f"Copying checkpoint {model_path} to {best_model_dst}")
             fs.get(model_path, best_model_dst)
+            fs.get(model_path, "models/model_test.ckpt")
 
             # Log the best model with DVCLive (automatic registering in DVC Studio)
             live.log_artifact(
@@ -128,6 +129,15 @@ def train():
                 labels=["mnist", "autoencoder", "lightning"],
                 meta={"resumed_from": resume_checkpoint}, 
                 cache=False
+            )
+
+            live.log_artifact(
+                "models/model_test.ckpt", 
+                name="mnist_model_test", 
+                type="model", 
+                labels=["mnist", "autoencoder", "lightning"],
+                meta={"resumed_from": resume_checkpoint}, 
+                cache=True
             )
 
 if __name__ == "__main__":
